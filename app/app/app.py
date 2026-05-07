@@ -1,10 +1,11 @@
 import streamlit as st
-from groq import Groq
+import google.generativeai as genai
 
 st.set_page_config(page_title="Mera AI Chat", page_icon="🤖")
 st.title("🤖 Mera AI Chat")
 
-client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
@@ -22,11 +23,11 @@ for chat in st.session_state.chat_history:
 if prompt := st.chat_input("Sawal likho..."):
     st.session_state.chat_history.append({"role": "user", "content": prompt})
     with st.spinner("Soch raha hai..."):
-        response = client.chat.completions.create(
-            model="llama3-8b-8192",
-            messages=st.session_state.chat_history
-        )
-        reply = response.choices[0].message.content
+        history = [{"role": c["role"], "parts": c["content"]} 
+                   for c in st.session_state.chat_history[:-1]]
+        chat = model.start_chat(history=history)
+        response = chat.send_message(prompt)
+        reply = response.text
     st.session_state.chat_history.append({"role": "assistant", "content": reply})
     st.rerun()
 
