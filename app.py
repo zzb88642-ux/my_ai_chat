@@ -1,3 +1,4 @@
+
 import streamlit as st
 import google.generativeai as genai
 
@@ -5,7 +6,6 @@ st.set_page_config(page_title="Mera AI Chat", page_icon="🤖")
 st.title("🤖 Mera AI Chat")
 
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-model = genai.GenerativeModel("gemini-1.5-flash")
 
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
@@ -23,10 +23,13 @@ for chat in st.session_state.chat_history:
 if prompt := st.chat_input("Sawal likho..."):
     st.session_state.chat_history.append({"role": "user", "content": prompt})
     with st.spinner("Soch raha hai..."):
-        history = [{"role": c["role"], "parts": c["content"]} 
-                   for c in st.session_state.chat_history[:-1]]
-        chat = model.start_chat(history=history)
-        response = chat.send_message(prompt)
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        history = []
+        for c in st.session_state.chat_history[:-1]:
+            role = "user" if c["role"] == "user" else "model"
+            history.append({"role": role, "parts": [c["content"]]})
+        chat_session = model.start_chat(history=history)
+        response = chat_session.send_message(prompt)
         reply = response.text
     st.session_state.chat_history.append({"role": "assistant", "content": reply})
     st.rerun()
